@@ -1,0 +1,113 @@
+# AmoAPI
+
+**AmoAPI** — это обертка над библиотекой [amocrm/amocrm-api-php](https://github.com/amocrm/amocrm-api-php) для удобной работы с AmoCRM в вашем проекте на Laravel.
+
+## Описание
+
+Класс `AmoAPI` упрощает:
+- Подключение к AmoCRM API через сохраненные в базе токены.
+- Автоматическое обновление и сохранение нового токена через событие `onAccessTokenRefresh`.
+- Получение готового клиента AmoCRM с авторизацией или без.
+
+## Быстрый старт
+
+### Установка клиента
+
+```php
+use App\Domain\AmoAPI\AmoAPI;
+
+$client = AmoAPI::getClient();
+```
+
+### Использование клиента без авторизации
+
+```php
+use App\Domain\AmoAPI\AmoAPI;
+
+$client = AmoAPI::getClient(false);
+```
+
+## Примеры использования
+
+### Получение информации об аккаунте
+
+```php
+use App\Domain\AmoAPI\AmoAPI;
+
+$client = AmoAPI::getClient();
+$account = $client->account()->getCurrent();
+
+echo $account->getName();
+```
+
+### Обновление токена вручную
+
+```php
+use League\OAuth2\Client\Token\AccessToken;
+use App\Domain\AmoAPI\AmoAPI;
+
+$newToken = new AccessToken([
+    'access_token' => 'новый_access_token',
+    'refresh_token' => 'новый_refresh_token',
+    'expires' => time() + 3600,
+    'baseDomain' => 'example.amocrm.ru',
+]);
+
+AmoAPI::saveToken($newToken, 'example.amocrm.ru');
+```
+
+### Получение списка сделок
+
+```php
+use App\Domain\AmoAPI\AmoAPI;
+
+$client = AmoAPI::getClient();
+$leadsService = $client->leads();
+$leads = $leadsService->get();
+
+foreach ($leads as $lead) {
+    echo $lead->getName() . PHP_EOL;
+}
+```
+
+### Создание новой сделки
+
+```php
+use App\Domain\AmoAPI\AmoAPI;
+use AmoCRM\Models\LeadModel;
+
+$client = AmoAPI::getClient();
+$lead = new LeadModel();
+$lead->setName('Новая сделка')
+     ->setPrice(5000);
+
+$leadsService = $client->leads();
+$leadsService->addOne($lead);
+```
+
+## Методы AmoAPI
+
+### `getClient(bool $do_auth = true): AmoCRMApiClient`
+
+Создает экземпляр `AmoCRMApiClient`.
+- Если `$do_auth` = `true`, автоматически подключает токен и настраивает обновление.
+- Если `$do_auth` = `false`, возвращает клиент без токена.
+
+### `getToken(): AccessToken`
+
+Возвращает текущий сохраненный токен для подключения к API.
+
+### `saveToken(AccessTokenInterface $accessToken, string $base_domain): void`
+
+Сохраняет переданный токен и домен аккаунта в систему.
+
+## Требования
+
+- PHP 8.0+
+- Laravel 8+
+- Библиотека [amocrm/amocrm-api-php](https://github.com/amocrm/amocrm-api-php)
+
+## Полезные ссылки
+
+- [Документация AmoCRM API](https://www.amocrm.ru/developers)
+- [amocrm/amocrm-api-php на GitHub](https://github.com/amocrm/amocrm-api-php)
